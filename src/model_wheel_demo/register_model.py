@@ -5,6 +5,7 @@ import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
+import time
 
 import mlflow
 from databricks.sdk import WorkspaceClient
@@ -108,12 +109,37 @@ def main() -> None:
             ),
         )
 
-    # NOTE: The serving configuration request being accepted does not mean the
-    # endpoint is READY. Promotion is intentionally handled only after a
-    # separate readiness/inference verification step is implemented.
+    # Wait for the endpoint to become ready before testing it and promoting
+    # the model. A successful create/update request alone is not a health check.
+    deadline = time.monotonic() + 45 * 60
+    while time.monotonic() < deadline:
+        endpoint = client.serving_endpoints.get(name=args.serving_endpoint)
+        ready = getattr(getattr(endpoint, "state", None), "ready", None)
+        ready_value = getattr(ready, "value", ready)
+        if str(ready_value).upper() == "READY":
+            break
+        print(f"Waiting for serving endpoint readiness; current state={ready_value!s}")
+        time.sleep(30)
+    else:
+        raise TimeoutError(
+            f"Serving endpoint {args.serving_endpoint!r} did not become READY "
+            "within 45 minutes. Champion alias was not changed."
+        )
+
+    response = client.serving_endpoints.query(
+        name=args.serving_endpoint,
+        dataframe_records=[{"input": "Say hello"}],
+    )
+    if response is None:
+        raise RuntimeError("Serving endpoint health query returned no response.")
+    response_error = getattr(response, "error", None)
+    if response_error:
+        raise RuntimeError(f"Serving endpoint health query failed: {response_error}")
+
+    client.registered_models.set_alias(args.model_name, "Champion", version)
     print(
-        f"Deployment submitted: model={args.model_name}, version={version}, "
-        f"endpoint={args.serving_endpoint}. Champion alias was not changed."
+        f"Deployment and smoke test succeeded: model={args.model_name}, "
+        f"version={version}, endpoint={args.serving_endpoint}; Champion promoted."
     )
 
 
