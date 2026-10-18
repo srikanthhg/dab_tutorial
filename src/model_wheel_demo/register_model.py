@@ -9,11 +9,7 @@ from typing import Any
 
 import mlflow
 from databricks.sdk import WorkspaceClient
-from databricks.sdk.service.serving import (
-    EndpointCoreConfigInput,
-    ServedModelInput,
-    ServedModelInputWorkloadSize,
-)
+from databricks.sdk.service.serving import EndpointCoreConfigInput, ServedModelInput
 from mlflow.models.resources import DatabricksServingEndpoint
 
 from model_wheel_demo.agent import build_agent
@@ -90,7 +86,7 @@ def main() -> None:
     serving_model = ServedModelInput(
         model_name=args.model_name,
         model_version=version,
-        workload_size=ServedModelInputWorkloadSize.SMALL,
+        workload_size="Small",
         scale_to_zero_enabled=True,
     )
     endpoint_names = {item.name for item in client.serving_endpoints.list()}
