@@ -30,8 +30,10 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-      - name: Install build and test tools
-        run: python -m pip install --upgrade pip build pytest ruff
+      - name: Install project and test dependencies
+        run: |
+          python -m pip install --upgrade pip build pytest ruff
+          python -m pip install -e ".[dev]"
       - name: Lint
         run: ruff check .
       - name: Build wheel
