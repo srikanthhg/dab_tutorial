@@ -28,17 +28,12 @@ targets:
   dev:
     default: true
     mode: development
-    workspace:
-      # host: ${{ env.DATABRICKS_HOST }}
-      host: ${bundle.environment.DATABRICKS_HOST}
     variables:
       schema: mlflow_demo_dev
       serving_endpoint: model-wheel-dev-agent
 
   prod:
     mode: production
-    workspace:
-      host: ${bundle.environment.DATABRICKS_HOST}
     variables:
       schema: mlflow_demo
       serving_endpoint: model-wheel-agent
