@@ -27,6 +27,8 @@ jobs:
         with:
           python-version: "3.12"
       - uses: databricks/setup-cli@main
+      - name: Install Databricks SDK
+        run: python -m pip install "databricks-sdk>=0.50,<1"
       - name: Delete only the development endpoint
         run: |
           python - <<'PY'
