@@ -7,9 +7,9 @@ resources:
       timeout_seconds: 7200
       tasks:
         - task_key: register_and_serve
-          python_script_task:
-            python_file: scripts/register_model.py
-            source: WORKSPACE
+          python_wheel_task:
+            package_name: model_wheel_demo
+            entry_point: register-model
             parameters:
               - --model-name
               - ${var.catalog}.${var.schema}.demo_agent
@@ -21,11 +21,6 @@ resources:
       environments:
         - environment_key: serverless
           spec:
-            client: "1"
+            environment_version: "2"
             dependencies:
-              - ./dist/*.whl
-              - databricks-langchain==0.6.0
-              - langchain==0.3.14
-              - langchain-core==0.3.29
-              - "mlflow>=3.1,<4"
-              - "databricks-sdk>=0.50,<1"
+              - ../dist/*.whl
