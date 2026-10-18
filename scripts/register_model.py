@@ -56,7 +56,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-name", required=True)
     parser.add_argument("--llm-model", required=True)
     parser.add_argument("--serving-endpoint", required=True)
-    parser.add_argument("--promote-champion", action="store_true")
     return parser.parse_args()
 
 
@@ -65,8 +64,8 @@ def main() -> None:
     client = WorkspaceClient()
     mlflow.set_registry_uri("databricks-uc")
 
-    # Register a new model version. Do not move Champion until serving config
-    # has been accepted, unless an operator explicitly opts into promotion.
+    # Register a new model version. Champion is moved only after the serving
+    # endpoint create/update request has been accepted.
     with mlflow.start_run() as run:
         model_info = mlflow.pyfunc.log_model(
             name="agent",
@@ -109,14 +108,8 @@ def main() -> None:
             ),
         )
 
-    if args.promote_champion:
-        client.registered_models.set_alias(args.model_name, "Champion", version)
-        print(f"Champion alias now points to version {version}.")
-    else:
-        print(
-            "Champion alias unchanged. Validate serving endpoint health, then "
-            "run the promotion workflow to move Champion."
-        )
+    client.registered_models.set_alias(args.model_name, "Champion", version)
+    print(f"Champion alias now points to version {version}.")
 
     print(
         f"Deployment submitted: model={args.model_name}, version={version}, "
