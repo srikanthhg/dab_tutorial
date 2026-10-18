@@ -1,6 +1,6 @@
 import sys
 
-from scripts import register_model
+from model_wheel_demo import register_model
 
 
 def test_parse_args_requires_deployment_parameters(monkeypatch):
@@ -8,10 +8,13 @@ def test_parse_args_requires_deployment_parameters(monkeypatch):
         sys,
         "argv",
         [
-            "register_model.py",
-            "--model-name", "main.mlflow_demo_dev.demo_agent",
-            "--llm-model", "databricks-meta-llama-3-3-70b-instruct",
-            "--serving-endpoint", "model-wheel-dev-agent",
+            "register-model",
+            "--model-name",
+            "main.mlflow_demo_dev.demo_agent",
+            "--llm-model",
+            "databricks-meta-llama-3-3-70b-instruct",
+            "--serving-endpoint",
+            "model-wheel-dev-agent",
         ],
     )
     args = register_model.parse_args()

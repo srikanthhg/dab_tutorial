@@ -5,6 +5,7 @@ import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
+import time
 
 import mlflow
 from databricks.sdk import WorkspaceClient
@@ -35,7 +36,9 @@ class AgentModel(mlflow.pyfunc.PythonModel):
         for record in records:
             prompt = record.get("input")
             if not isinstance(prompt, str) or not prompt.strip():
-                raise ValueError("Each input record must contain a non-empty 'input' string.")
+                raise ValueError(
+                    "Each input record must contain a non-empty 'input' string."
+                )
             result = agent.invoke({"input": prompt})
             outputs.append(str(result.get("output", result)))
         return outputs
@@ -64,8 +67,6 @@ def main() -> None:
     client = WorkspaceClient()
     mlflow.set_registry_uri("databricks-uc")
 
-    # Register a new model version. Champion is moved only after the serving
-    # endpoint create/update request has been accepted.
     with mlflow.start_run() as run:
         model_info = mlflow.pyfunc.log_model(
             name="agent",
@@ -108,12 +109,37 @@ def main() -> None:
             ),
         )
 
-    client.registered_models.set_alias(args.model_name, "Champion", version)
-    print(f"Champion alias now points to version {version}.")
+    # Wait for the endpoint to become ready before testing it and promoting
+    # the model. A successful create/update request alone is not a health check.
+    deadline = time.monotonic() + 45 * 60
+    while time.monotonic() < deadline:
+        endpoint = client.serving_endpoints.get(name=args.serving_endpoint)
+        ready = getattr(getattr(endpoint, "state", None), "ready", None)
+        ready_value = getattr(ready, "value", ready)
+        if str(ready_value).upper() == "READY":
+            break
+        print(f"Waiting for serving endpoint readiness; current state={ready_value!s}")
+        time.sleep(30)
+    else:
+        raise TimeoutError(
+            f"Serving endpoint {args.serving_endpoint!r} did not become READY "
+            "within 45 minutes. Champion alias was not changed."
+        )
 
+    response = client.serving_endpoints.query(
+        name=args.serving_endpoint,
+        dataframe_records=[{"input": "Say hello"}],
+    )
+    if response is None:
+        raise RuntimeError("Serving endpoint health query returned no response.")
+    response_error = getattr(response, "error", None)
+    if response_error:
+        raise RuntimeError(f"Serving endpoint health query failed: {response_error}")
+
+    client.registered_models.set_alias(args.model_name, "Champion", version)
     print(
-        f"Deployment submitted: model={args.model_name}, version={version}, "
-        f"endpoint={args.serving_endpoint}"
+        f"Deployment and smoke test succeeded: model={args.model_name}, "
+        f"version={version}, endpoint={args.serving_endpoint}; Champion promoted."
     )
 
 
