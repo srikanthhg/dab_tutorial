@@ -28,12 +28,18 @@ targets:
   dev:
     default: true
     mode: development
+    workspace:
+      host: https://adb-dev-123456789.azuredatabricks.net
     variables:
       schema: mlflow_demo_dev
       serving_endpoint: model-wheel-dev-agent
 
   prod:
     mode: production
+    workspace:
+      host: https://adb-dev-123456789.azuredatabricks.net
     variables:
       schema: mlflow_demo
       serving_endpoint: model-wheel-agent
+    permissions:
+      - 
