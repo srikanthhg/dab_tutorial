@@ -10,10 +10,7 @@ artifacts:
     path: .
     build: python -m build
 
-variables:
-  catalog:
-    description: Unity Catalog catalog for the registered model.
-    default: main
+variables:      # catalog variables defined in resources folder. we can define variables in either ways databricks.yml or resources folder
   schema:
     description: Unity Catalog schema for the registered model.
     default: mlflow_demo
