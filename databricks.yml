@@ -39,5 +39,3 @@ targets:
       schema: mlflow_demo
       serving_endpoint: model-wheel-agent
       experiment_name: /Shared/model-wheel-prod
-    permissions:
-      - 

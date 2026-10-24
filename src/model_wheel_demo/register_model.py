@@ -98,7 +98,7 @@ def main() -> None:
     if not version:
         raise RuntimeError("MLflow did not return a registered model version.")
 
-    # Validate the saved model artifact before changing Model Serving.
+    # Validate the saved artifact before changing Model Serving.
     mlflow.pyfunc.load_model(model_info.model_uri)
     print(f"MLflow model artifact loaded successfully: {model_info.model_uri}")
 
