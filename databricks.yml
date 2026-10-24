@@ -5,11 +5,6 @@ include:
   - resources/*.yml
   - resources/*/*.yml
 
-artifacts:
-  default:
-    type: whl
-    path: .
-    build: python -m build
 
 variables:      # catalog variables defined in resources folder. we can define variables in either ways databricks.yml or resources folder
   schema:
