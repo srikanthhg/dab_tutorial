@@ -15,8 +15,11 @@ def test_parse_args_requires_deployment_parameters(monkeypatch):
             "databricks-meta-llama-3-3-70b-instruct",
             "--serving-endpoint",
             "model-wheel-dev-agent",
+            "--experiment-name",
+            "/Shared/model-wheel-dev",
         ],
     )
     args = register_model.parse_args()
     assert args.model_name == "main.mlflow_demo_dev.demo_agent"
     assert args.serving_endpoint == "model-wheel-dev-agent"
+    assert args.experiment_name == "/Shared/model-wheel-dev"

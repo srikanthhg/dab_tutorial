@@ -55,6 +55,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-name", required=True)
     parser.add_argument("--llm-model", required=True)
     parser.add_argument("--serving-endpoint", required=True)
+    parser.add_argument("--experiment-name", required=True)
     return parser.parse_args()
 
 
@@ -62,6 +63,9 @@ def main() -> None:
     args = parse_args()
     client = WorkspaceClient()
     mlflow.set_registry_uri("databricks-uc")
+    # Serverless jobs may not have a default MLflow experiment configured.
+    # Explicitly select/create one before starting a run so experiment_id is valid.
+    mlflow.set_experiment(args.experiment_name)
 
     with mlflow.start_run() as run:
         model_info = mlflow.pyfunc.log_model(

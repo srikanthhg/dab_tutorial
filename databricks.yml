@@ -16,6 +16,9 @@ variables:      # catalog variables defined in resources folder. we can define v
   serving_endpoint:
     description: Model Serving endpoint managed by this target.
     default: model-wheel-agent
+  experiment_name:
+    description: Workspace MLflow experiment used to track model registration runs.
+    default: /Shared/model-wheel
 
 targets:
   dev:
@@ -26,6 +29,7 @@ targets:
     variables:
       schema: mlflow_demo_dev
       serving_endpoint: model-wheel-dev-agent
+      experiment_name: /Shared/model-wheel-dev
 
   prod:
     mode: production
@@ -34,5 +38,6 @@ targets:
     variables:
       schema: mlflow_demo
       serving_endpoint: model-wheel-agent
+      experiment_name: /Shared/model-wheel-prod
     permissions:
       - 
