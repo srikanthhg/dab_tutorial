@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import shutil
-import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -41,13 +39,15 @@ class AgentModel(mlflow.pyfunc.PythonModel):
 
 
 def package_source() -> str:
-    """Copy the installed package into an MLflow code path."""
+    """Return the package directory for MLflow's model code path."""
     import model_wheel_demo
 
-    package_dir = Path(model_wheel_demo.__file__).parent
-    target = Path(tempfile.mkdtemp(prefix="model-wheel-source-")) / "model_wheel_demo"
-    shutil.copytree(package_dir, target)
-    return str(target.parent)
+    package_dir = Path(model_wheel_demo.__file__).resolve().parent
+    if not (package_dir / "__init__.py").is_file():
+        raise FileNotFoundError(
+            f"Python package is missing its __init__.py: {package_dir}"
+        )
+    return str(package_dir)
 
 
 def parse_args() -> argparse.Namespace:
@@ -63,11 +63,21 @@ def main() -> None:
     args = parse_args()
     client = WorkspaceClient()
     mlflow.set_registry_uri("databricks-uc")
-    # Serverless jobs may not have a default MLflow experiment configured.
-    # Explicitly select/create one before starting a run so experiment_id is valid.
-    mlflow.set_experiment(args.experiment_name)
 
-    with mlflow.start_run() as run:
+    # Explicitly select/create the Workspace MLflow experiment before starting
+    # a run. Log its identity so the job output confirms where the run is saved.
+    mlflow.set_experiment(args.experiment_name)
+    experiment = mlflow.get_experiment_by_name(args.experiment_name)
+    if experiment is None:
+        raise RuntimeError(
+            f"MLflow experiment {args.experiment_name!r} was not created or found."
+        )
+    print(
+        f"Using MLflow experiment: name={experiment.name}, "
+        f"experiment_id={experiment.experiment_id}"
+    )
+
+    with mlflow.start_run(experiment_id=experiment.experiment_id) as run:
         model_info = mlflow.pyfunc.log_model(
             name="agent",
             python_model=AgentModel(args.llm_model),
@@ -82,10 +92,15 @@ def main() -> None:
             ],
         )
         print(f"MLflow run ID: {run.info.run_id}")
+        print(f"Logged MLflow model URI: {model_info.model_uri}")
 
     version = model_info.registered_model_version
     if not version:
         raise RuntimeError("MLflow did not return a registered model version.")
+
+    # Validate the saved model artifact before changing Model Serving.
+    mlflow.pyfunc.load_model(model_info.model_uri)
+    print(f"MLflow model artifact loaded successfully: {model_info.model_uri}")
 
     serving_model = ServedModelInput(
         model_name=args.model_name,
@@ -109,15 +124,20 @@ def main() -> None:
             ),
         )
 
-    # Wait for the endpoint to become ready before testing it and promoting
-    # the model. A successful create/update request alone is not a health check.
+    # Fail fast when serving reports a terminal failed/not-ready state.
     deadline = time.monotonic() + 45 * 60
     while time.monotonic() < deadline:
         endpoint = client.serving_endpoints.get(name=args.serving_endpoint)
         ready = getattr(getattr(endpoint, "state", None), "ready", None)
         ready_value = getattr(ready, "value", ready)
-        if str(ready_value).upper() == "READY":
+        ready_text = str(ready_value).upper()
+        if ready_text == "READY":
             break
+        if "NOT_READY" in ready_text or "FAILED" in ready_text:
+            raise RuntimeError(
+                f"Serving endpoint {args.serving_endpoint!r} entered state "
+                f"{ready_value!s}; inspect serving logs. Champion alias was not changed."
+            )
         print(f"Waiting for serving endpoint readiness; current state={ready_value!s}")
         time.sleep(30)
     else:
