@@ -60,6 +60,8 @@ jobs:
       - uses: databricks/setup-cli@main
       - name: Install bundle build dependency
         run: python -m pip install --upgrade build
+      - name: Build Python Wheel Artifact
+        run: python -m build
       - name: Validate bundle
         run: databricks bundle validate -t dev
       - name: Deploy bundle
@@ -84,6 +86,8 @@ jobs:
       - uses: databricks/setup-cli@main
       - name: Install bundle build dependency
         run: python -m pip install --upgrade build
+      - name: Build Python Wheel Artifact
+        run: python -m build
       - name: Validate bundle
         run: databricks bundle validate -t prod
       - name: Deploy bundle
