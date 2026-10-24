@@ -17,6 +17,8 @@ resources:
               - ${var.llm_model}
               - --serving-endpoint
               - ${var.serving_endpoint}
+              - --experiment-name
+              - ${var.experiment_name}
           environment_key: serverless
       environments:
         - environment_key: serverless
