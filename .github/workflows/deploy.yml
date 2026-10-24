@@ -67,7 +67,7 @@ jobs:
       - name: Deploy bundle
         run: databricks bundle deploy -t dev
       - name: Run model registration and serving job
-        run: databricks bundle run -t dev model_wheel_deploy
+        run: databricks bundle run -t dev --resource model_wheel_deploy
 
   deploy-prod:
     if: github.event_name == 'workflow_dispatch' && inputs.target == 'prod'
