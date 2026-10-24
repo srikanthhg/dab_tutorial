@@ -4,11 +4,6 @@ bundle:
 include:
   - resources/*.yml
 
-artifacts:
-  default:
-    type: whl
-    path: .
-    build: python -m build
 
 variables:
   catalog:
