@@ -83,7 +83,7 @@ The default LLM endpoint is `databricks-meta-llama-3-3-70b-instruct`; it must al
 
 ## Local validation
 
-Use Python 3.12 and a current Databricks CLI:
+Use Python 3.11 and a current Databricks CLI:
 
 ```bash
 python -m pip install --upgrade build pytest ruff
