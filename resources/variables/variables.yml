@@ -1,0 +1,4 @@
+variables:
+  catalog:
+    description: Unity Catalog catalog for the registered model.
+    default: main

@@ -3,12 +3,10 @@ bundle:
 
 include:
   - resources/*.yml
+  - resources/*/*.yml
 
 
-variables:
-  catalog:
-    description: Unity Catalog catalog for the registered model.
-    default: main
+variables:      # catalog variables defined in resources folder. we can define variables in either ways databricks.yml or resources folder
   schema:
     description: Unity Catalog schema for the registered model.
     default: mlflow_demo
@@ -24,7 +22,7 @@ targets:
     default: true
     mode: development
     workspace:
-      host: ${env.DATABRICKS_HOST}
+      host: https://adb-7405609931845875.15.azuredatabricks.net
     variables:
       schema: mlflow_demo_dev
       serving_endpoint: model-wheel-dev-agent
@@ -32,7 +30,9 @@ targets:
   prod:
     mode: production
     workspace:
-      host: ${env.DATABRICKS_HOST}
+      host: https://adb-7405609931845875.15.azuredatabricks.net
     variables:
       schema: mlflow_demo
       serving_endpoint: model-wheel-agent
+    permissions:
+      - 
